@@ -1,0 +1,67 @@
+#!/bin/bash
+if [ "$#" -gt 2 ] || [ "$#" -le 0 ]
+then
+	echo "Usage: d_paas_cli [create] <url param> or [deploy]"
+	exit 1
+fi
+if ! [ "$1" == "create" ] && ! [ "$1" == "deploy" ];
+then
+        echo "Usage: d_paas_cli [create] or [deploy]"
+        exit 1
+fi
+tIFS=$IFS
+IFS=" /"
+if [ "$1" == "create" ]
+then
+	uname=""
+	repo_name=""
+	url=""
+	remo=$(git remote -v)
+	i=0
+	for word in $remo;
+	do
+		if [ $i == 3 ];
+		then
+			uname=$word
+		fi
+		if [ $i == 4 ];
+		then
+			repo_name=$word
+		fi
+	 	i=$((i+1))
+	done
+	if [ "$uname" == "" ]
+	then
+		echo -n "Enter Username :"
+		read uname
+		echo -n "Enter Repo Name :"
+		read repo_name
+	else
+		IFS=' .'
+		remo=$repo_name
+		for word in $remo;
+		do
+			repo_name=$word
+			break
+		done	
+	fi
+	IFS=$tIFS
+	url=$2
+	hook_name="web"
+
+	#echo "Uname :"$uname
+	#echo "Repo:"$repo_name
+	#echo "Url :"$url
+	#echo "name:"$hook_name
+	#echo
+	#echo
+	#echo "Request URL"
+        #echo https://api.github.com/repos/$uname/$repo_name/hooks -H "Content-Type:application/json" -d '{"name": "'$hook_name'", "active":true,"events": [ "push" ],"config" : { "url":"'$url'","content_type": "json" } }'
+	echo
+	echo
+	curl -u $uname -X POST https://api.github.com/repos/$uname/$repo_name/hooks -H "Content-Type:application/json" -d '{"name": "'$hook_name'", "active":true,"events": [ "push" ], "config" : { "url": "'$url'","content_type": "json" } }'
+
+else
+	echo "Deploying..."
+        git push origin master
+fi
